@@ -105,6 +105,7 @@ bool FlcPlayer::init(const char *filename, void(*frameCallBack)(), Game *game, i
 
 	_frameCallBack = frameCallBack;
 	_realScreen = game->getScreen();
+	_realScreen->clear();
 	_game = game;
 	_dx = dx;
 	_dy = dy;
@@ -466,8 +467,15 @@ void FlcPlayer::playAudioFrame(Uint16 sampleRate)
 		loadingBuff->sampleBufSize = newSize;
 	}
 
+	float volume = Game::volumeExponent(Options::musicVolume);
+	for (int i = 0; i < _audioFrameSize; i++)
+	{
+		float tempVal = (float)(_chunkData[i]) * volume;
+		_chunkData[i] = tempVal;
+	}
 	/* Copy the data.... */
 	memcpy(loadingBuff->samples + loadingBuff->sampleCount, _chunkData, _audioFrameSize);
+
 	loadingBuff->sampleCount += _audioFrameSize;
 
 	SDL_SemPost(_audioData.sharedLock);
@@ -858,6 +866,11 @@ int FlcPlayer::getFrameCount()
 void FlcPlayer::setHeaderSpeed(int speed)
 {
 	_headerSpeed = speed;
+}
+
+bool FlcPlayer::wasSkipped()
+{
+	return _playingState == SKIPPED;
 }
 
 void FlcPlayer::waitForNextFrame(Uint32 delay)
